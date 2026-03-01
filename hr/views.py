@@ -7,72 +7,29 @@ from django.db.models import Q
 from .models import Employee
 from .services import import_service
 from datasets.models import Dataset
+from .services import employee_service
 
 @login_required
 def dashboard(request):
-    context = {
-        'total_employees': Employee.objects.count(),
-        'active_employees': Employee.objects.filter(status_kerja='Aktif').count(),
-        'contract_employees': Employee.objects.filter(status_karyawan='Kontrak').count(),
-        'permanent_employees': Employee.objects.filter(status_karyawan='Tetap').count(),
-        'active_count': Employee.objects.filter(status_kerja='Aktif').count(),
-        'contract_count': Employee.objects.filter(status_karyawan='Kontrak').count(),
-        'permanent_count': Employee.objects.filter(status_karyawan='Tetap').count(),
-    }
+    context = employee_service.get_dashboard_stats()
     return render(request, 'hr/dashboard.html', context)
 
 @login_required
 def employee_list(request):
-    # Ambil semua employee
-    employees = Employee.objects.all()
-    
-    # Search
-    search_query = request.GET.get('search', '')
-    if search_query:
-        employees = employees.filter(
-            Q(nik__icontains=search_query) |
-            Q(nama__icontains=search_query) |
-            Q(dept__icontains=search_query)
-        )
-    
-    # Filter
-    dept = request.GET.get('dept', '')
-    if dept:
-        employees = employees.filter(dept=dept)
-    
-    status_karyawan = request.GET.get('status_karyawan', '')
-    if status_karyawan:
-        employees = employees.filter(status_karyawan=status_karyawan)
-    
-    status_kerja = request.GET.get('status_kerja', '')
-    if status_kerja:
-        employees = employees.filter(status_kerja=status_kerja)
-    
-    # Pagination
-    paginator = Paginator(employees, 20)  # 20 per page
-    page_number = request.GET.get('page', 1)
-    page_obj = paginator.get_page(page_number)
-    
-    # Ambil list unique untuk filter dropdown
-    dept_list = Employee.objects.values_list('dept', flat=True).distinct().order_by('dept')
-    status_karyawan_list = Employee.objects.values_list('status_karyawan', flat=True).distinct()
-    status_kerja_list = Employee.objects.values_list('status_kerja', flat=True).distinct()
-    
+    page_obj = employee_service.get_employee_list(request)
     context = {
         'page_obj': page_obj,
-        'search_query': search_query,
-        'dept_list': dept_list,
-        'status_karyawan_list': status_karyawan_list,
-        'status_kerja_list': status_kerja_list,
-        'selected_dept': dept,
-        'selected_status_karyawan': status_karyawan,
-        'selected_status_kerja': status_kerja,
+        'search_query': request.GET.get('search', ''),
     }
     return render(request, 'hr/employee_list.html', context)
 
 @login_required
 def employee_detail(request, nik):
-    return HttpResponse(f"Detail for employee {nik}")
+    employee = employee_service.get_employee_by_nik(nik)
+    if not employee:
+        messages.error(request, 'Employee not found')
+        return redirect('hr:employee_list')
+    return render(request, 'hr/employee_detail.html', {'employee': employee})
 
 @login_required
 def employee_edit(request, nik):

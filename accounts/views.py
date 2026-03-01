@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth import authenticate, login, logout
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from audit.utils import log_action
+from audit.services import audit_utils
 
 def login_view(request):
     if request.method == 'POST':
@@ -13,7 +13,7 @@ def login_view(request):
         if user is not None:
             login(request, user)
             # Log successful login
-            log_action(request, 'LOGIN', f"User {username} logged in")
+            audit_utils.log_action(request, 'LOGIN', f"User {username} logged in")
             return redirect('dashboard')
         else:
             messages.error(request, 'Invalid username or password.')
@@ -22,7 +22,7 @@ def login_view(request):
 
 def logout_view(request):
     if request.user.is_authenticated:
-        log_action(request, 'LOGOUT', f"User {request.user.username} logged out")
+        audit_utils.log_action(request, 'LOGOUT', f"User {request.user.username} logged out")
     logout(request)
     return redirect('login')
 

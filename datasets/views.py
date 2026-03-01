@@ -6,7 +6,7 @@ from .models import Dataset
 from .forms import DatasetUploadForm
 from .services.validator import ExcelValidator
 from accounts.decorators import role_required
-from audit.utils import log_action
+from audit.services import audit_utils
 
 @login_required
 @role_required(['SuperAdmin', 'Admin', 'Manager'])
@@ -24,7 +24,7 @@ def upload_dataset(request):
             dataset.save()
             
             # Log upload
-            log_action(request, 'UPLOAD', 
+            audit_utils.log_action(request, 'UPLOAD', 
                       f"Uploaded file: {dataset.original_filename}", 
                       {'dataset_id': dataset.pk, 'filename': dataset.original_filename})
             
@@ -83,7 +83,7 @@ def activate_dataset(request, pk):
     # Log before activation
     old_active = Dataset.objects.filter(status='active').first()
     if old_active:
-        log_action(request, 'DEACTIVATE', 
+        audit_utils.log_action(request, 'DEACTIVATE', 
                   f"Deactivated dataset: {old_active.name}", 
                   {'dataset_id': old_active.pk, 'name': old_active.name})
     
@@ -95,7 +95,7 @@ def activate_dataset(request, pk):
     dataset.save()
     
     # Log activation
-    log_action(request, 'ACTIVATE', 
+    audit_utils.log_action(request, 'ACTIVATE', 
               f"Activated dataset: {dataset.name}", 
               {'dataset_id': dataset.pk, 'name': dataset.name, 'rows': dataset.row_count})
     

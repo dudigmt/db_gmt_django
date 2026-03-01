@@ -7,7 +7,7 @@ import random
 from datetime import datetime, timedelta
 import csv
 from django.http import HttpResponse
-from audit.utils import log_action  # <-- Tambah ini
+from audit.services import audit_utils
 
 @login_required
 def dashboard_home(request):
@@ -104,7 +104,7 @@ def export_dataset_csv(request):
         return HttpResponse("No active dataset", status=404)
     
     # Log export
-    log_action(request, 'EXPORT', 
+    audit_utils.log_action(request, 'EXPORT', 
               f"Exported dataset: {active_dataset.name} to CSV", 
               {'dataset_id': active_dataset.pk, 'name': active_dataset.name, 'rows': active_dataset.row_count})
     

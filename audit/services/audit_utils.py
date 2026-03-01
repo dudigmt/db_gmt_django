@@ -1,4 +1,4 @@
-from .models import AuditLog
+from audit.models import AuditLog
 
 def log_action(request, action, description="", data=None):
     """Utility function untuk mencatat aksi user"""
