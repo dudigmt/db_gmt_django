@@ -1,0 +1,169 @@
+{% extends 'base.html' %}
+{% load dataset_filters %}
+
+{% block title %}Dataset: {{ dataset.name }}{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <!-- Header with actions -->
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold">{{ dataset.name }}</h1>
+        <div class="space-x-2">
+            <a href="{% url 'dataset_list' %}" 
+               class="px-4 py-2 bg-gray-500 text-white rounded hover:bg-gray-600">
+                Back to List
+            </a>
+            {% if dataset.status == 'validated' and user.profile.role in 'SuperAdmin,Admin' %}
+            <a href="{% url 'activate_dataset' dataset.pk %}" 
+               class="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700"
+               onclick="return confirm('Activate this dataset? This will deactivate any currently active dataset.')">
+                Activate Dataset
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    
+    {% if messages %}
+        {% for message in messages %}
+            <div class="mb-4 p-3 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded">
+                {{ message }}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
+    <!-- Status Banner -->
+    <div class="mb-6 p-4 rounded-lg 
+        {% if dataset.status == 'active' %}bg-green-100 text-green-800
+        {% elif dataset.status == 'validated' %}bg-blue-100 text-blue-800
+        {% elif dataset.status == 'uploaded' %}bg-yellow-100 text-yellow-800
+        {% elif dataset.status == 'rejected' %}bg-red-100 text-red-800
+        {% endif %}">
+        <div class="flex items-center">
+            <span class="font-semibold mr-2">Status:</span>
+            <span class="px-2 py-1 rounded-full text-sm font-medium 
+                {% if dataset.status == 'active' %}bg-green-200 text-green-800
+                {% elif dataset.status == 'validated' %}bg-blue-200 text-blue-800
+                {% elif dataset.status == 'uploaded' %}bg-yellow-200 text-yellow-800
+                {% elif dataset.status == 'rejected' %}bg-red-200 text-red-800
+                {% endif %}">
+                {{ dataset.get_status_display }}
+            </span>
+        </div>
+        {% if dataset.validation_report %}
+        <div class="mt-2 text-sm">
+            <strong>Validation Report:</strong>
+            <pre class="mt-1 whitespace-pre-wrap">{{ dataset.validation_report }}</pre>
+        </div>
+        {% endif %}
+    </div>
+    
+    <!-- Main Info -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-4">Dataset Information</h2>
+            <dl class="space-y-2">
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Description:</dt>
+                    <dd class="w-2/3">{{ dataset.description|default:'No description' }}</dd>
+                </div>
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Filename:</dt>
+                    <dd class="w-2/3">{{ dataset.original_filename }}</dd>
+                </div>
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">File Size:</dt>
+                    <dd class="w-2/3">{{ dataset.file_size|filesizeformat }}</dd>
+                </div>
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Uploaded:</dt>
+                    <dd class="w-2/3">{{ dataset.uploaded_at|date:'Y-m-d H:i:s' }}</dd>
+                </div>
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Uploaded By:</dt>
+                    <dd class="w-2/3">{{ dataset.uploaded_by.username }}</dd>
+                </div>
+            </dl>
+        </div>
+        
+        <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+            <h2 class="text-lg font-semibold mb-4">Statistics</h2>
+            <dl class="space-y-2">
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Rows:</dt>
+                    <dd class="w-2/3">{{ dataset.row_count|default:'-' }}</dd>
+                </div>
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Columns:</dt>
+                    <dd class="w-2/3">{{ dataset.column_count|default:'-' }}</dd>
+                </div>
+                {% if dataset.summary_stats.missing_values %}
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Missing Values:</dt>
+                    <dd class="w-2/3">{{ dataset.summary_stats.missing_values }}</dd>
+                </div>
+                {% endif %}
+                {% if dataset.summary_stats.memory_usage %}
+                <div class="flex">
+                    <dt class="w-1/3 text-gray-600 dark:text-gray-400">Memory Usage:</dt>
+                    <dd class="w-2/3">{{ dataset.summary_stats.memory_usage|floatformat:2 }} MB</dd>
+                </div>
+                {% endif %}
+            </dl>
+        </div>
+    </div>
+    
+    <!-- Columns Info -->
+    {% if dataset.columns_json.columns %}
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow mb-6">
+        <h2 class="text-lg font-semibold mb-4">Columns</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        <th class="px-4 py-2 text-left">Column Name</th>
+                        <th class="px-4 py-2 text-left">Data Type</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for column in dataset.columns_json.columns %}
+                    <tr class="border-t dark:border-gray-700">
+                        <td class="px-4 py-2">{{ column }}</td>
+                        <td class="px-4 py-2">
+                            {{ dataset.columns_json.dtypes|get_item:column|default:'unknown' }}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+    
+    <!-- Sample Data -->
+    {% if dataset.summary_stats.sample %}
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <h2 class="text-lg font-semibold mb-4">Sample Data (First 5 rows)</h2>
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead class="bg-gray-50 dark:bg-gray-700">
+                    <tr>
+                        {% for col in dataset.columns_json.columns|slice:":5" %}
+                        <th class="px-4 py-2 text-left">{{ col|truncatechars:20 }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in dataset.summary_stats.sample %}
+                    <tr class="border-t dark:border-gray-700">
+                        {% for col in dataset.columns_json.columns|slice:":5" %}
+                        <td class="px-4 py-2">{{ row|get_item:col|default:'-'|truncatechars:30 }}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

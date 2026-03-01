@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-3xl font-bold text-gray-900 dark:text-white mb-8">Dashboard</h1>
+
+    {% if active_dataset %}
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow p-6">
+            <h2 class="text-xl font-semibold text-gray-900 dark:text-white mb-4">
+                Active Dataset: {{ active_dataset.name }}
+            </h2>
+
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-blue-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Total Rows</p>
+                    <p class="text-3xl font-bold text-blue-600 dark:text-blue-400">{{ active_dataset.row_count }}</p>
+                </div>
+
+                <div class="bg-green-50 dark:bg-gray-700 p-4 rounded-lg">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Total Columns</p>
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400">{{ active_dataset.column_count }}</p>
+                </div>
+            </div>
+
+            <!-- Export Button -->
+            <div class="mt-4 flex justify-end">
+                <a href="{% url 'export_csv' %}" 
+                   class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors">
+                    <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path>
+                    </svg>
+                    Export to CSV
+                </a>
+            </div>
+
+            <!-- Metadata -->
+            <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-purple-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Uploaded At</p>
+                    <p class="text-md font-semibold text-purple-600 dark:text-purple-400">
+                        {{ upload_date|date:"d M Y H:i"|default:"-" }}
+                    </p>
+                </div>
+                <div class="bg-indigo-50 dark:bg-gray-700 p-3 rounded-lg">
+                    <p class="text-sm text-gray-600 dark:text-gray-300">Last Updated</p>
+                    <p class="text-md font-semibold text-indigo-600 dark:text-indigo-400">
+                        {{ last_update|date:"d M Y H:i"|default:"-" }}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Column List -->
+            <div class="mt-6">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-2">Columns</h3>
+                <div class="bg-gray-50 dark:bg-gray-900 p-4 rounded-lg max-h-48 overflow-y-auto">
+                    <p class="text-gray-700 dark:text-gray-300 text-sm">
+                        {% if columns_list %}
+                            {{ columns_list|join:", " }}
+                        {% else %}
+                            No column information available
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+
+            <!-- Department Breakdown dengan Progress Bar dan Filter -->
+            {% if dept_data %}
+            <div class="mt-8">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-medium text-gray-900 dark:text-white">Department Distribution</h3>
+                    
+                    <!-- Filter dropdown -->
+                    <select id="dept-filter" class="px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 text-sm">
+                        <option value="all">All Departments</option>
+                        {% for dept in dept_data %}
+                        <option value="{{ dept.name }}">{{ dept.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="department-breakdown bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
+                    {% for dept in dept_data %}
+                    <div class="mb-4 last:mb-0">
+                        <div class="flex justify-between text-sm text-gray-600 dark:text-gray-300 mb-1">
+                            <span>{{ dept.name|default:"Unknown" }}</span>
+                            <span class="font-medium">{{ dept.count }} karyawan</span>
+                        </div>
+
+                        <!-- Progress bar -->
+                        <div class="w-full bg-gray-200 dark:bg-gray-700 rounded-full h-2.5">
+                            {% if dept_data.0.count > 0 %}
+                            <div class="bg-blue-600 dark:bg-blue-500 h-2.5 rounded-full"
+                                 style="width: {% widthratio dept.count dept_data.0.count 100 %}%"></div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Recruitment Trend Chart -->
+            <div class="mt-8">
+                <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-4">Recruitment Trend (12 Bulan Terakhir)</h3>
+                <div class="bg-white dark:bg-gray-800 rounded-lg p-4 border border-gray-200 dark:border-gray-700">
+                    <div class="h-80">
+                        <canvas id="recruitmentChart"
+                                data-months='{{ chart_months|safe }}'
+                                data-counts='{{ chart_counts|safe }}'></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        <div class="bg-yellow-50 dark:bg-gray-800 border border-yellow-200 dark:border-gray-700 rounded-lg p-6">
+            <p class="text-yellow-800 dark:text-yellow-200">
+                No active dataset found.
+                <a href="{% url 'dataset_list' %}" class="underline hover:text-yellow-600 dark:hover:text-yellow-300">
+                    Go to Datasets
+                </a> to activate one.
+            </p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

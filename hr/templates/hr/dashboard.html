@@ -1,0 +1,345 @@
+{% extends 'hr/base_hr.html' %}
+{% load static %}
+
+{% block breadcrumb %}Dashboard{% endblock %}
+
+{% block page_title %}HR Dashboard{% endblock %}
+
+{% block page_actions %}
+<a href="{% url 'hr:employee_add' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+    <i class="fa-solid fa-plus-circle mr-2"></i> Add Employee
+</a>
+<a href="{% url 'hr:import_preview' %}" class="inline-flex items-center px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors">
+    <i class="fa-solid fa-upload mr-2"></i> Import
+</a>
+{% endblock %}
+
+{% block hr_content %}
+<!-- Summary Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <!-- Total Employees Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 card-hover">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Total Employees
+                    </p>
+                    <p class="text-3xl font-bold text-gray-900 dark:text-white mt-2">
+                        {{ total_employees|default:"0" }}
+                    </p>
+                </div>
+                <div class="bg-blue-100 dark:bg-blue-900/30 rounded-full p-3">
+                    <i class="fa-solid fa-users text-2xl text-blue-600 dark:text-blue-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <span class="text-green-600 dark:text-green-400 mr-2">
+                    <i class="fa-solid fa-arrow-up"></i> {{ active_employees|default:"0" }}
+                </span>
+                <span>active employees</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Employees Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 card-hover">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Active
+                    </p>
+                    <p class="text-3xl font-bold text-green-600 dark:text-green-400 mt-2">
+                        {{ active_employees|default:"0" }}
+                    </p>
+                </div>
+                <div class="bg-green-100 dark:bg-green-900/30 rounded-full p-3">
+                    <i class="fa-solid fa-user-check text-2xl text-green-600 dark:text-green-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 flex items-center text-sm text-gray-600 dark:text-gray-400">
+                <i class="fa-regular fa-clock mr-2"></i>
+                <span>{{ active_percentage|default:"0" }}% of total</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Contract Employees Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 card-hover">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Contract
+                    </p>
+                    <p class="text-3xl font-bold text-yellow-600 dark:text-yellow-400 mt-2">
+                        {{ contract_employees|default:"0" }}
+                    </p>
+                </div>
+                <div class="bg-yellow-100 dark:bg-yellow-900/30 rounded-full p-3">
+                    <i class="fa-solid fa-file-signature text-2xl text-yellow-600 dark:text-yellow-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                <span class="text-gray-900 dark:text-white font-medium">{{ expiring_contracts|default:"0" }}</span> expiring soon
+            </div>
+        </div>
+    </div>
+
+    <!-- Permanent Employees Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 card-hover">
+        <div class="p-6">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-sm font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                        Permanent
+                    </p>
+                    <p class="text-3xl font-bold text-purple-600 dark:text-purple-400 mt-2">
+                        {{ permanent_employees|default:"0" }}
+                    </p>
+                </div>
+                <div class="bg-purple-100 dark:bg-purple-900/30 rounded-full p-3">
+                    <i class="fa-solid fa-star text-2xl text-purple-600 dark:text-purple-400"></i>
+                </div>
+            </div>
+            <div class="mt-4 text-sm text-gray-600 dark:text-gray-400">
+                <i class="fa-regular fa-calendar mr-2"></i>
+                <span>Avg tenure: {{ avg_tenure|default:"-" }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Section -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <!-- Employee by Department Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fa-solid fa-chart-pie text-blue-500 mr-2"></i>
+                Employees by Department
+            </h3>
+            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+        </div>
+        <div class="h-80">
+            <canvas id="deptChart"></canvas>
+        </div>
+    </div>
+
+    <!-- Employee by Status Chart -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm p-6">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fa-solid fa-chart-bar text-green-500 mr-2"></i>
+                Employee by Status
+            </h3>
+            <button class="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300">
+                <i class="fa-solid fa-ellipsis-vertical"></i>
+            </button>
+        </div>
+        <div class="h-80">
+            <canvas id="statusChart"></canvas>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Activities & Quick Actions -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+    <!-- Recent Employees -->
+    <div class="lg:col-span-2 bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fa-solid fa-clock-rotate-left text-gray-500 mr-2"></i>
+                Recently Added Employees
+            </h3>
+        </div>
+        <div class="p-6">
+            {% if recent_employees %}
+            <div class="space-y-4">
+                {% for emp in recent_employees %}
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center">
+                                <i class="fa-regular fa-user text-gray-500 dark:text-gray-400"></i>
+                            </div>
+                        </div>
+                        <div class="ml-3">
+                            <p class="text-sm font-medium text-gray-900 dark:text-white">{{ emp.nama }}</p>
+                            <p class="text-xs text-gray-500 dark:text-gray-400">{{ emp.nik }} • {{ emp.dept|truncatechars:20 }}</p>
+                        </div>
+                    </div>
+                    <span class="badge {% if emp.status_karyawan == 'Tetap' %}badge-success{% elif emp.status_karyawan == 'Kontrak' %}badge-warning{% else %}badge-info{% endif %}">
+                        {{ emp.status_karyawan }}
+                    </span>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <i class="fa-regular fa-user text-4xl text-gray-300 dark:text-gray-600 mb-3"></i>
+                <p class="text-gray-500 dark:text-gray-400">No employees yet</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Quick Actions Card -->
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+        <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+            <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+                <i class="fa-solid fa-bolt text-yellow-500 mr-2"></i>
+                Quick Actions
+            </h3>
+        </div>
+        <div class="p-6 space-y-3">
+            <a href="{% url 'hr:employee_add' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                <div class="bg-blue-100 dark:bg-blue-900/30 rounded-lg p-3 mr-3">
+                    <i class="fa-solid fa-user-plus text-blue-600 dark:text-blue-400"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400">
+                        Add New Employee
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Create manual entry</p>
+                </div>
+                <i class="fa-solid fa-arrow-right text-gray-400 group-hover:text-blue-500"></i>
+            </a>
+            
+            <a href="{% url 'hr:import_preview' %}" class="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                <div class="bg-green-100 dark:bg-green-900/30 rounded-lg p-3 mr-3">
+                    <i class="fa-solid fa-file-excel text-green-600 dark:text-green-400"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-green-600 dark:group-hover:text-green-400">
+                        Import from Excel
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Bulk import employees</p>
+                </div>
+                <i class="fa-solid fa-arrow-right text-gray-400 group-hover:text-green-500"></i>
+            </a>
+            
+            <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                <div class="bg-purple-100 dark:bg-purple-900/30 rounded-lg p-3 mr-3">
+                    <i class="fa-solid fa-download text-purple-600 dark:text-purple-400"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-purple-600 dark:group-hover:text-purple-400">
+                        Export Data
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">CSV, Excel, PDF</p>
+                </div>
+                <i class="fa-solid fa-arrow-right text-gray-400 group-hover:text-purple-500"></i>
+            </a>
+            
+            <div class="border-t border-gray-200 dark:border-gray-700 my-2"></div>
+            
+            <a href="#" class="flex items-center p-3 rounded-lg hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors group">
+                <div class="bg-red-100 dark:bg-red-900/30 rounded-lg p-3 mr-3">
+                    <i class="fa-solid fa-calendar text-red-600 dark:text-red-400"></i>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-medium text-gray-900 dark:text-white group-hover:text-red-600 dark:group-hover:text-red-400">
+                        Leave Management
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">Coming soon</p>
+                </div>
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Department Chart
+    const deptCtx = document.getElementById('deptChart')?.getContext('2d');
+    if (deptCtx) {
+        new Chart(deptCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ dept_labels|safe }},
+                datasets: [{
+                    data: {{ dept_data|safe }},
+                    backgroundColor: [
+                        'rgb(59, 130, 246)',
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 158, 11)',
+                        'rgb(139, 92, 246)',
+                        'rgb(236, 72, 153)',
+                        'rgb(107, 114, 128)'
+                    ],
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#374151'
+                        }
+                    }
+                }
+            }
+        });
+    }
+
+    // Status Chart
+    const statusCtx = document.getElementById('statusChart')?.getContext('2d');
+    if (statusCtx) {
+        new Chart(statusCtx, {
+            type: 'bar',
+            data: {
+                labels: {{ status_labels|safe }},
+                datasets: [{
+                    label: 'Employees',
+                    data: {{ status_data|safe }},
+                    backgroundColor: [
+                        'rgb(16, 185, 129)',
+                        'rgb(245, 158, 11)',
+                        'rgb(107, 114, 128)'
+                    ],
+                    borderRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        display: false
+                    }
+                },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            color: document.documentElement.classList.contains('dark') ? '#374151' : '#e5e7eb'
+                        },
+                        ticks: {
+                            color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'
+                        }
+                    },
+                    x: {
+                        grid: {
+                            display: false
+                        },
+                        ticks: {
+                            color: document.documentElement.classList.contains('dark') ? '#9ca3af' : '#6b7280'
+                        }
+                    }
+                }
+            }
+        });
+    }
+});
+</script>
+{% endblock %}

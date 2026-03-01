@@ -1,0 +1,70 @@
+{% extends 'base.html' %}
+
+{% block title %}Upload Dataset{% endblock %}
+
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="bg-white dark:bg-gray-800 p-6 rounded-lg shadow">
+        <h1 class="text-2xl font-bold mb-6">Upload Dataset</h1>
+        
+        {% if messages %}
+            {% for message in messages %}
+                <div class="mb-4 p-3 {% if message.tags == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %} rounded">
+                    {{ message }}
+                </div>
+            {% endfor %}
+        {% endif %}
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 dark:text-gray-300 mb-2">Dataset Name</label>
+                {{ form.name }}
+                {% if form.name.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.name.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="mb-4">
+                <label class="block text-gray-700 dark:text-gray-300 mb-2">Description</label>
+                {{ form.description }}
+                {% if form.description.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.description.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="mb-6">
+                <label class="block text-gray-700 dark:text-gray-300 mb-2">Excel File</label>
+                {{ form.file }}
+                <p class="text-sm text-gray-500 mt-1">Accepted formats: .xlsx, .xls (max 10MB)</p>
+                {% if form.file.errors %}
+                    <p class="text-red-600 text-sm mt-1">{{ form.file.errors.0 }}</p>
+                {% endif %}
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <button type="submit" 
+                        class="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">
+                    Upload & Validate
+                </button>
+                <a href="{% url 'dataset_list' %}" 
+                   class="text-gray-600 dark:text-gray-400 hover:underline">
+                    Cancel
+                </a>
+            </div>
+        </form>
+        
+        <div class="mt-6 p-4 bg-blue-50 dark:bg-gray-700 rounded">
+            <h3 class="font-semibold mb-2">File Requirements:</h3>
+            <ul class="list-disc list-inside text-sm space-y-1">
+                <li>Excel files only (.xlsx, .xls)</li>
+                <li>Maximum file size: 10MB</li>
+                <li>Maximum rows: 100,000</li>
+                <li>Maximum columns: 100</li>
+                <li>First row should contain column headers</li>
+            </ul>
+        </div>
+    </div>
+</div>
+{% endblock %}

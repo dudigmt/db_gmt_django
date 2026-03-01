@@ -1,0 +1,242 @@
+{% extends 'hr/base_hr.html' %}
+{% load hr_extras %}
+
+{% block breadcrumb %}Import Employees{% endblock %}
+
+{% block page_title %}
+    <i class="fa-solid fa-upload mr-2 text-green-500"></i>Import Employees from Dataset
+{% endblock %}
+
+{% block hr_content %}
+{% if no_dataset %}
+<div class="bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-yellow-400 p-6 rounded-lg shadow-sm mb-6">
+    <div class="flex items-start">
+        <div class="flex-shrink-0">
+            <i class="fa-solid fa-triangle-exclamation text-yellow-400 text-xl"></i>
+        </div>
+        <div class="ml-3">
+            <h3 class="text-sm font-medium text-yellow-800 dark:text-yellow-300">No Active Dataset Found!</h3>
+            <p class="text-sm text-yellow-700 dark:text-yellow-400 mt-1">Please set a dataset as active first in the Datasets module.</p>
+            <div class="mt-4">
+                <a href="{% url 'dataset_list' %}" class="inline-flex items-center px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-medium rounded-lg transition-colors">
+                    <i class="fa-solid fa-database mr-2"></i> Go to Datasets
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% else %}
+
+<!-- Dataset Information Card -->
+<div class="bg-gradient-to-r from-blue-500 to-blue-600 dark:from-blue-600 dark:to-blue-800 rounded-xl shadow-lg mb-8">
+    <div class="px-6 py-5">
+        <div class="flex items-center justify-between text-white">
+            <div class="flex items-center space-x-4">
+                <div class="bg-white/20 rounded-lg p-3">
+                    <i class="fa-solid fa-database text-2xl"></i>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold">Dataset Information</h3>
+                    <p class="text-blue-100 text-sm">{{ dataset.name }}</p>
+                </div>
+            </div>
+            <div class="flex space-x-6">
+                <div class="text-center">
+                    <span class="text-2xl font-bold">{{ total_rows }}</span>
+                    <p class="text-blue-100 text-xs uppercase tracking-wider">Total Rows</p>
+                </div>
+                <div class="text-center">
+                    <span class="text-2xl font-bold">{{ dataset.uploaded_at|date:"d M Y" }}</span>
+                    <p class="text-blue-100 text-xs uppercase tracking-wider">Uploaded</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Data Preview Card -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm mb-8">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="fa-solid fa-table mr-2 text-gray-500"></i>
+            Data Preview (First 10 rows)
+        </h3>
+    </div>
+    <div class="p-6">
+        <div class="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden">
+            <div class="overflow-x-auto scrollbar-thin">
+                <div class="max-h-96 overflow-y-auto scrollbar-thin">
+                    <table class="w-full text-sm text-left">
+                        <thead class="sticky top-0 bg-gray-50 dark:bg-gray-700 text-gray-700 dark:text-gray-300 text-xs uppercase">
+                            <tr>
+                                {% for col in columns %}
+                                <th class="px-4 py-3 font-medium whitespace-nowrap">{{ col }}</th>
+                                {% endfor %}
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                            {% for row in sample_rows %}
+                            <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors">
+                                {% for col in columns %}
+                                <td class="px-4 py-3 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                                    {{ row|get_item:col|default:'<span class="text-gray-400 dark:text-gray-600">—</span>' }}
+                                </td>
+                                {% endfor %}
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <p class="text-xs text-gray-500 dark:text-gray-400 mt-3">
+            <i class="fa-regular fa-eye mr-1"></i>
+            Showing first 10 rows of {{ total_rows }} total records
+        </p>
+    </div>
+</div>
+
+<!-- Import Options Card -->
+<div class="bg-white dark:bg-gray-800 rounded-xl shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white">
+            <i class="fa-solid fa-gear mr-2 text-gray-500"></i>
+            Import Options
+        </h3>
+    </div>
+    <div class="p-6">
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="bg-blue-100 dark:bg-blue-800 rounded-lg p-2 mr-3">
+                        <i class="fa-solid fa-file-excel text-blue-600 dark:text-blue-300"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Total Records</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ total_rows }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-green-50 dark:bg-green-900/20 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="bg-green-100 dark:bg-green-800 rounded-lg p-2 mr-3">
+                        <i class="fa-solid fa-check text-green-600 dark:text-green-300"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Valid Records</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ total_rows }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-purple-50 dark:bg-purple-900/20 rounded-lg p-4">
+                <div class="flex items-center">
+                    <div class="bg-purple-100 dark:bg-purple-800 rounded-lg p-2 mr-3">
+                        <i class="fa-solid fa-list text-purple-600 dark:text-purple-300"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-gray-500 dark:text-gray-400">Columns</p>
+                        <p class="text-xl font-bold text-gray-900 dark:text-white">{{ columns|length }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <form method="POST" action="{% url 'hr:import_execute' %}" id="importForm">
+            {% csrf_token %}
+            
+            <!-- Import Options -->
+            <div class="mb-6">
+                <label class="flex items-start space-x-3 cursor-pointer">
+                    <input type="checkbox" name="update_duplicate" id="updateDuplicate" 
+                           class="mt-1 w-4 h-4 text-blue-600 bg-gray-100 border-gray-300 rounded focus:ring-blue-500 dark:focus:ring-blue-600 dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600">
+                    <div class="flex-1">
+                        <span class="text-sm font-medium text-gray-900 dark:text-white">
+                            Update existing employees if NIK already exists
+                        </span>
+                        <p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                            If unchecked, duplicate NIKs will be skipped during import
+                        </p>
+                    </div>
+                </label>
+            </div>
+            
+            <!-- Column Mapping Info (optional) -->
+            <div class="bg-gray-50 dark:bg-gray-700/50 rounded-lg p-4 mb-6">
+                <h4 class="text-sm font-medium text-gray-900 dark:text-white mb-2">
+                    <i class="fa-regular fa-circle-question mr-2 text-gray-500"></i>
+                    Column Mapping
+                </h4>
+                <p class="text-xs text-gray-600 dark:text-gray-400">
+                    The following columns will be imported: 
+                    <span class="font-mono">{{ columns|join:", " }}</span>
+                </p>
+            </div>
+            
+            <!-- Action Buttons -->
+            <div class="flex items-center space-x-3">
+                <button type="submit" class="inline-flex items-center px-6 py-3 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors" id="startImportBtn">
+                    <i class="fa-solid fa-cloud-arrow-up mr-2"></i>
+                    Start Import
+                </button>
+                <a href="{% url 'hr:dashboard' %}" class="inline-flex items-center px-6 py-3 bg-gray-100 hover:bg-gray-200 dark:bg-gray-700 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 text-sm font-medium rounded-lg transition-colors">
+                    Cancel
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Loading Modal (for import progress) -->
+<div id="importLoadingModal" class="fixed inset-0 bg-gray-900/50 dark:bg-gray-900/80 hidden items-center justify-center z-50" style="display: none;">
+    <div class="bg-white dark:bg-gray-800 rounded-xl shadow-xl max-w-md w-full mx-4 p-6 text-center">
+        <div class="spinner mx-auto mb-4"></div>
+        <h3 class="text-lg font-semibold text-gray-900 dark:text-white mb-2">Importing Data...</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Please wait while we import your data. This may take a few moments.</p>
+        <div class="progress-bar w-full">
+            <div class="progress-bar-fill bg-green-500" style="width: 0%" id="importProgress"></div>
+        </div>
+        <p class="text-xs text-gray-400 dark:text-gray-500 mt-3" id="importStatus">Processing records...</p>
+    </div>
+</div>
+
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const importForm = document.getElementById('importForm');
+    const startBtn = document.getElementById('startImportBtn');
+    const loadingModal = document.getElementById('importLoadingModal');
+    const importProgress = document.getElementById('importProgress');
+    const importStatus = document.getElementById('importStatus');
+    
+    if (importForm) {
+        importForm.addEventListener('submit', function(e) {
+            // Show loading modal
+            e.preventDefault();
+            
+            loadingModal.style.display = 'flex';
+            
+            // Simulate progress (in real app, you'd use AJAX with progress updates)
+            let progress = 0;
+            const interval = setInterval(function() {
+                progress += 10;
+                importProgress.style.width = progress + '%';
+                importStatus.textContent = `Processing records... ${progress}%`;
+                
+                if (progress >= 100) {
+                    clearInterval(interval);
+                    importStatus.textContent = 'Finalizing import...';
+                    importForm.submit(); // Actually submit the form
+                }
+            }, 300);
+        });
+    }
+});
+</script>
+{% endblock %}

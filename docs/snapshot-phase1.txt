@@ -1,0 +1,44 @@
+Continue development from this PROJECT STATE SNAPSHOT:
+
+**PROJECT STATE SNAPSHOT**
+
+System Name: company_system
+Current Phase: 1 (Foundation)
+Date: 28 Februari 2026
+
+## Environment
+- OS: WSL2 Ubuntu
+- Path: /home/adung/projects/company_system
+- Python: 3.11.14
+- Django: 5.1.6
+- Database: PostgreSQL 16 (running)
+- Virtual Env: .venv (aktif)
+
+## Completed Features
+✅ Django project initialized
+✅ PostgreSQL connected (user: adung, db: gmt_db, pass: GMTrangkas1207)
+✅ Migrasi pertama sudah jalan
+✅ Tailwind CSS terinstall sebagai binary
+✅ Build CSS sukses (output.css tergenerate)
+✅ Base template dengan navbar dan dark mode placeholder
+✅ URL routing (index view ke base.html)
+✅ Apps terdaftar: core, admin, auth, sessions
+
+## Database Models
+- Default Django auth models (User, Group, Permission)
+- Belum ada custom models
+
+## File Penting
+- `company_system/settings.py` - sudah pakai PostgreSQL
+- `core/views.py` - index view return base.html
+- `core/templates/base.html` - template utama
+- `core/static/core/css/output.css` - hasil build Tailwind
+- `tailwindcss` - binary file (bisa langsung di run)
+
+## Last Working State
+```bash
+python manage.py runserver
+# http://127.0.0.1:8000 menampilkan:
+# - Navbar dengan tulisan "Company System"
+# - Tombol "Toggle Dark Mode" (placeholder)
+# - Background abu-abu
