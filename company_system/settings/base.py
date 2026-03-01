@@ -43,8 +43,7 @@ INSTALLED_APPS = [
     'accounts',
     'datasets',
     'dashboard',
-    'audit',
-    'debug_toolbar',
+    'audit',    
     'hr',
 ]
 
