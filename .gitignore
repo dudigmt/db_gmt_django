@@ -1,1 +1,32 @@
+# Virtual environment
+.venv/
+venv/
+env/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+
+# Large binaries
+tailwindcss
+*.exe
+*.dmg
+*.msi
+
+# Django
+media/
+staticfiles/
+
+# Environment variables
 .env
+*.env
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
